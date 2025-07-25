@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "StrongPassword123!"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P StrongPassword123! -d master -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  # Container para inicializar o banco automaticamente
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      - sqlserver
+    volumes:
+      - ./init.sql:/scripts/init.sql
+    command: >
+      bash -c "
+      echo 'Waiting for SQL Server to be ready...' &&
+      sleep 5 &&
+      echo 'Executing initialization script...' &&
+      /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P StrongPassword123! -d master -i /scripts/init.sql &&
+      echo 'Database initialization completed!'
+      "
+    networks:
+      - default
+
+  # Aplicação Python
+  app:
+    build: .
+    depends_on:
+      sqlserver-init:
+        condition: service_completed_successfully
+    environment:
+      - MSSQL_HOST=sqlserver
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: python main.py
+
+volumes:
+  sqlserver_data:

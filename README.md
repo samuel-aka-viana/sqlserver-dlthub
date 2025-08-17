@@ -1,6 +1,6 @@
 # SQLServer DLT Hub Connector
 
-Este repositório demonstra como criar e usar um conector customizado para SQL Server no DLT Hub (Delta Live Tables Hub) usando Python e ODBC.
+Este repositório demonstra como criar e usar um conector customizado para SQL Server no DLT Hub (Data Load Tools Hub) usando Python e ODBC.
 
 ## Visão Geral
 
